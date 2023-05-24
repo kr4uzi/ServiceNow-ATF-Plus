@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_atf_step_config">
+    <sys_atf_step_config action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <batch_order_constraint>stop</batch_order_constraint>
+        <can_mutate_page>false</can_mutate_page>
+        <category display_value="Service Catalog">1d786c87c3b6220076173b0ac3d3ae16</category>
+        <class_name/>
+        <class_type>script</class_type>
+        <deprecated>false</deprecated>
+        <description_generator><![CDATA[/* global step */
+/* global gs, GlideRecord */
+/* eslint no-undef: "error" */
+(function generateDescription(step) {
+
+	const variableGr = step.inputs.variable_name.getRefRecord();
+	if (variableGr.isValidRecord() && step.inputs.variable_value) {
+		let valueGr = new GlideRecord(variableGr.list_table.toString());
+		valueGr.addQuery('sys_id', step.inputs.variable_value);
+		valueGr.setLimit(1);
+		valueGr.query();
+		if (valueGr.next()) {
+			return "Set the Value of '" + variableGr.name + "' to '" + valueGr.getDisplayValue() + "'";
+		} else {
+			gs.error("'ATF+ Set List Collector Variable Value' description generation error, no 'Name' or 'Value' set");
+		}
+	} else {
+		gs.error("'ATF+ Set List Collector Variable Value' description generation error, no 'Name' or 'Value' set");
+	}
+	
+	return gs.getMessage('Error generating the description, please check the error log!');
+	
+})(step);]]></description_generator>
+        <html_description><![CDATA[<p>Set the value for a certain list collector field on the current Catalog Item or Record Producer page or a form containing variable editor</p>
+<p><strong>Catalog Item</strong> - This step can be used to set the variables values in-between the “Open a Catalog Item” and “Order Catalog Item” step or can be used after opening a from (using the &#39;Open an Existing Record&#39; step) containing the variable editor.<br /><br /><strong>Record Producer</strong>  - This step can be used to set the variables values in-between the “Open a Record Producer” and “Submit Record Producer” step or can be used after opening the target record from (using the &#39;Open an Existing Record&#39; step) containing the variable editor.</p>
+<p>This step is mainly used a replacement for the &#34;glide_list&#34; workaround suggested by <a href="https://support.servicenow.com/kb?id&#61;kb_article_view&amp;sysparm_article&#61;KB0713770" target="_blank" rel="noopener noreferrer nofollow">KB0713770➚</a>.</p>]]></html_description>
+        <icon>icon-article-document</icon>
+        <inputs/>
+        <name>ATF+ Set List Collector Variable Value</name>
+        <order>4110</order>
+        <outputs/>
+        <step_env display_value="UI">d2cb02e1870312009dccc9ded0e3ec7c</step_env>
+        <step_execution_generator><![CDATA[/* global step, stepResult, assertionObject */
+/* global g_ui_testing_util, getMessage, GlideAjax */
+/* eslint no-undef: "error" */
+(function(step, stepResult, assertionObject) {
+	
+	// source of g_ui_testing_util:
+	// /scripts/app.snTestRunner/util/GUITestingUtil.js
+	
+	// All ATF Scripts:
+	// /scripts/js_includes_snTestRunner.js
+
+	var messages = {
+		'NO_G_FORM': 'FAILURE: Unable to set values, g_form is not defined. A valid form must be open before setting values',
+		'SUCCESSFULLY_SET_TO': "Successfully set field '{0}' to value '{1}'",
+		'FAILED_SET_TO': "FAILURE: Failed to set field '{0}' to value '{1}'.",
+		'SKIP_SETTING': 'Skipping setting a value, no field or value was given',
+		'INVALID_VARIABLE': 'FAILURE: Unable to set values, variable is not or incorrectly defined.',
+	};
+	
+    assertionObject.executeStep = function(step, stepResult) {
+		getMessage(Object.values(messages), function (translatedMessages) {
+			Object.keys(messages).forEach(function (key) {
+				messages[key] = translatedMessages[messages[key]];
+			});
+			
+			var ga = new GlideAjax('x_424426_atf.CatalogItemUtilClient').setScope('x_424426_atf');
+			ga.addParam('sysparm_name', 'getVariableName');
+			ga.addParam('variable', step.inputs.variable_name); // the variable_name contains the sys_id of the variable
+			ga.getXMLAnswer(function (variableName) {
+				var config = {
+					$window: g_ui_testing_util.getTestIFrameWindow(),
+					$timeout: g_ui_testing_util.timeout(),
+					variable_name: step.inputs.variable_name,
+					variable_value: step.inputs.variable_value,
+					timeout: step.inputs.timeout || 15,
+				};
+				
+				if (variableName) {
+					config.variable_name = variableName;
+					processStep(config);
+				} else {
+					onError(messages.INVALID_VARIABLE);
+				}
+			});
+		});
+    };
+	
+    assertionObject.canMutatePage = step.can_mutate_page;
+	
+	function processStep(config) {
+		if (!config.$window || !config.$window.g_form) {
+			onError(messages.NO_G_FORM);
+		} else if (config.variable_name && config.variable_value) {
+			config.$window[config.variable_name + 'g_filter'].reset();
+			config.$window[config.variable_name + 'g_filter'].setQuery('sys_id=' + config.variable_value);
+			config.$window[config.variable_name + 'acRequest'](null);
+
+			var $timeout = g_ui_testing_util.timeout();
+			$timeout(function () {
+				// wait until the list has loaded
+				config.$window.g_form.setValue(config.variable_name, config.variable_value);
+				
+				$timeout(function () {
+					// wait until the display value for the new value has loaded
+					var values = config.$window.g_form.getValue(config.variable_name);
+					if (values && values.indexOf(config.variable_value) > -1) {
+						onSuccess(messages.SUCCESSFULLY_SET_TO.withValues([config.variable_name, config.variable_value]));
+					} else {
+						onError(messages.FAILED_SET_TO.withValues([config.variable_name, config.variable_value]));
+					}
+				}, 2000);
+			}, 5000);
+		} else {
+			onSuccess(messages.SKIP_SETTING);
+		}
+	}
+	
+	function message(msg) {
+		return g_ui_testing_util.setTestStepStatusMessage(msg);
+	}
+	
+	function onError(msg) {
+		message(msg);
+		stepResult.message = msg;
+		stepResult.success = false;
+		step.defer.reject();
+	}
+
+	function onSuccess(msg) {
+		message(msg);
+		stepResult.message = msg;
+		stepResult.success = true;
+		step.defer.resolve();
+	}
+	
+})(step, stepResult, assertionObject);]]></step_execution_generator>
+        <sys_class_name>sys_atf_step_config</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-05-23 20:35:56</sys_created_on>
+        <sys_id>0e0cdf6897032110d70ef207f053af12</sys_id>
+        <sys_mod_count>22</sys_mod_count>
+        <sys_name>ATF+ Set List Collector Variable Value</sys_name>
+        <sys_package display_value="ATF+" source="x_424426_atf">02dbdb2497032110d70ef207f053af3d</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="ATF+">02dbdb2497032110d70ef207f053af3d</sys_scope>
+        <sys_update_name>sys_atf_step_config_0e0cdf6897032110d70ef207f053af12</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2023-05-24 16:46:41</sys_updated_on>
+        <template_reminder>ATF+ Set List Collector Variable Value</template_reminder>
+        <type display_value="Test Step" name="sys_atf_step">0dfc4fcec59021108c8b506e733c4c06</type>
+        <wizard_redirect/>
+    </sys_atf_step_config>
+    <sys_translated_text action="delete_multiple" query="documentkey=0e0cdf6897032110d70ef207f053af12"/>
+    <sys_variable_value action="delete_multiple" query="document_key=0e0cdf6897032110d70ef207f053af12"/>
+    <sys_element_mapping action="delete_multiple" query="table=var__m_atf_input_variable_0e0cdf6897032110d70ef207f053af12^id=0e0cdf6897032110d70ef207f053af12"/>
+</record_update>

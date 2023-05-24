@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>public</access>
+        <active>true</active>
+        <api_name>x_424426_atf.CatalogItemUtil</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>CatalogItemUtil</name>
+        <script><![CDATA[var CatalogItemUtil = Class.create();
+CatalogItemUtil.prototype = {
+	initialize: function () {
+		
+	},
+	
+	getCatalogItemVariablesRefQual: function (catalogItemSysID) {
+		if (catalogItemSysID) {
+			let mrvsGr = new GlideRecord('io_set_item');
+			mrvsGr.addQuery('sc_cat_item', catalogItemSysID);
+			mrvsGr.query();
+
+			let mrvs = [];
+			while (mrvsGr.next()) {
+				mrvs.push(mrvsGr.getUniqueValue());
+			}
+
+			let variableGr = new GlideRecord('item_option_new');
+			variableGr.addQuery('active', true);
+			variableGr.addQuery('cat_item', catalogItemSysID)
+				.addOrCondition('variable_set', 'IN', mrvs);
+			return variableGr.getEncodedQuery();
+		}
+		
+		return 'sys_id=x';
+	},
+	
+    type: 'CatalogItemUtil'
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2023-05-23 21:03:47</sys_created_on>
+        <sys_id>29d26fa097432110d70ef207f053aff2</sys_id>
+        <sys_mod_count>8</sys_mod_count>
+        <sys_name>CatalogItemUtil</sys_name>
+        <sys_package display_value="ATF+" source="x_424426_atf">02dbdb2497032110d70ef207f053af3d</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="ATF+">02dbdb2497032110d70ef207f053af3d</sys_scope>
+        <sys_update_name>sys_script_include_29d26fa097432110d70ef207f053aff2</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2023-05-24 05:39:11</sys_updated_on>
+    </sys_script_include>
+</record_update>
