@@ -1,33 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sys_atf_step_config">
     <sys_atf_step_config action="INSERT_OR_UPDATE">
         <active>true</active>
-        <batch_order_constraint>stop</batch_order_constraint>
+        <batch_order_constraint>middle</batch_order_constraint>
         <can_mutate_page>false</can_mutate_page>
         <category display_value="Service Catalog">1d786c87c3b6220076173b0ac3d3ae16</category>
         <class_name/>
         <class_type>script</class_type>
         <deprecated>false</deprecated>
         <description_generator><![CDATA[/* global step */
-/* global gs, GlideRecord */
+/* global x_424426_atf */
 /* eslint no-undef: "error" */
 (function generateDescription(step) {
-
-	const variableGr = step.inputs.variable_name.getRefRecord();
-	if (variableGr.isValidRecord() && step.inputs.variable_value) {
-		let valueGr = new GlideRecord(variableGr.list_table.toString());
-		valueGr.addQuery('sys_id', step.inputs.variable_value);
-		valueGr.setLimit(1);
-		valueGr.query();
-		if (valueGr.next()) {
-			return "Set the Value of '" + variableGr.name + "' to '" + valueGr.getDisplayValue() + "'";
-		} else {
-			gs.error("'ATF+ Set List Collector Variable Value' description generation error, no 'Name' or 'Value' set");
-		}
-	} else {
-		gs.error("'ATF+ Set List Collector Variable Value' description generation error, no 'Name' or 'Value' set");
-	}
 	
-	return gs.getMessage('Error generating the description, please check the error log!');
+	return new x_424426_atf.CatalogItemUtil().generateCollectionVariableStepDescription(step.inputs.variable_name, step.inputs.variable_value);
 	
 })(step);]]></description_generator>
         <html_description><![CDATA[<p>Set the value for a certain list collector field on the current Catalog Item or Record Producer page or a form containing variable editor</p>
@@ -35,7 +20,7 @@
 <p>This step is mainly used a replacement for the &#34;glide_list&#34; workaround suggested by <a href="https://support.servicenow.com/kb?id&#61;kb_article_view&amp;sysparm_article&#61;KB0713770" target="_blank" rel="noopener noreferrer nofollow">KB0713770➚</a>.</p>]]></html_description>
         <icon>icon-article-document</icon>
         <inputs/>
-        <name>ATF+ Set List Collector Variable Value</name>
+        <name>Set List Collector Variable Value (ATF+)</name>
         <order>4110</order>
         <outputs/>
         <step_env display_value="UI">d2cb02e1870312009dccc9ded0e3ec7c</step_env>
@@ -93,7 +78,7 @@
 			onError(messages.NO_G_FORM);
 		} else if (config.variable_name && config.variable_value) {
 			config.$window[config.variable_name + 'g_filter'].reset();
-			config.$window[config.variable_name + 'g_filter'].setQuery('sys_id=' + config.variable_value);
+			config.$window[config.variable_name + 'g_filter'].setQuery('sys_idIN' + config.variable_value);
 			config.$window[config.variable_name + 'acRequest'](null);
 
 			var $timeout = g_ui_testing_util.timeout();
@@ -139,15 +124,15 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2023-05-23 20:35:56</sys_created_on>
         <sys_id>0e0cdf6897032110d70ef207f053af12</sys_id>
-        <sys_mod_count>22</sys_mod_count>
-        <sys_name>ATF+ Set List Collector Variable Value</sys_name>
+        <sys_mod_count>29</sys_mod_count>
+        <sys_name>Set List Collector Variable Value (ATF+)</sys_name>
         <sys_package display_value="ATF+" source="x_424426_atf">02dbdb2497032110d70ef207f053af3d</sys_package>
         <sys_policy/>
         <sys_scope display_value="ATF+">02dbdb2497032110d70ef207f053af3d</sys_scope>
         <sys_update_name>sys_atf_step_config_0e0cdf6897032110d70ef207f053af12</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2023-05-24 16:46:41</sys_updated_on>
-        <template_reminder>ATF+ Set List Collector Variable Value</template_reminder>
+        <sys_updated_on>2023-05-25 16:16:57</sys_updated_on>
+        <template_reminder>Set List Collector Variable Value</template_reminder>
         <type display_value="Test Step" name="sys_atf_step">0dfc4fcec59021108c8b506e733c4c06</type>
         <wizard_redirect/>
     </sys_atf_step_config>

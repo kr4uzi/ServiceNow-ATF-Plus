@@ -13,6 +13,34 @@ CatalogItemUtil.prototype = {
 		
 	},
 	
+	generateCollectionVariableStepDescription: function (variableName, variableValue) {
+		if (variableName) {
+			const variableGr = variableName.getRefRecord();
+			if (variableGr.isValidRecord() && variableValue) {
+				let valueGr = new GlideRecord(variableGr.list_table.toString());
+				valueGr.addQuery('sys_id', 'IN', variableValue);
+				valueGr.query();
+				
+				let displayValues = [];
+				while (valueGr.next()) {
+					displayValues.push(valueGr.getDisplayValue());
+				}
+				
+				if (displayValues.length) {
+					return "Set the Value of '" + variableGr.name + "' to '" + displayValues.join(', ') + "'";
+				} else {
+					gs.error("'ATF+ Set List Collector Variable Value' description generation error, no 'Name' or 'Value' set");
+				}
+			} else {
+				gs.error("'ATF+ Set List Collector Variable Value' description generation error, no 'Name' or 'Value' set");
+			}
+
+			return gs.getMessage('Error generating the description, please check the error log!');
+		}
+		
+		return '';
+	},
+	
 	getCatalogItemVariablesRefQual: function (catalogItemSysID) {
 		if (catalogItemSysID) {
 			let mrvsGr = new GlideRecord('io_set_item');
@@ -24,8 +52,10 @@ CatalogItemUtil.prototype = {
 				mrvs.push(mrvsGr.getUniqueValue());
 			}
 
+			const listCollectorVariableType = 21;
 			let variableGr = new GlideRecord('item_option_new');
 			variableGr.addQuery('active', true);
+			variableGr.addQuery('type', listCollectorVariableType);
 			variableGr.addQuery('cat_item', catalogItemSysID)
 				.addOrCondition('variable_set', 'IN', mrvs);
 			return variableGr.getEncodedQuery();
@@ -40,13 +70,13 @@ CatalogItemUtil.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2023-05-23 21:03:47</sys_created_on>
         <sys_id>29d26fa097432110d70ef207f053aff2</sys_id>
-        <sys_mod_count>8</sys_mod_count>
+        <sys_mod_count>19</sys_mod_count>
         <sys_name>CatalogItemUtil</sys_name>
         <sys_package display_value="ATF+" source="x_424426_atf">02dbdb2497032110d70ef207f053af3d</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="ATF+">02dbdb2497032110d70ef207f053af3d</sys_scope>
         <sys_update_name>sys_script_include_29d26fa097432110d70ef207f053aff2</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2023-05-24 05:39:11</sys_updated_on>
+        <sys_updated_on>2023-05-25 16:24:49</sys_updated_on>
     </sys_script_include>
 </record_update>
