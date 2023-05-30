@@ -49,56 +49,57 @@
 				messages[key] = translatedMessages[messages[key]];
 			});
 			
-			var ga = new GlideAjax('x_424426_atf.CatalogItemUtilClient').setScope('x_424426_atf');
-			ga.addParam('sysparm_name', 'getVariableName');
-			ga.addParam('variable', step.inputs.variable_name); // the variable_name contains the sys_id of the variable
-			ga.getXMLAnswer(function (variableName) {
-				var config = {
-					$window: g_ui_testing_util.getTestIFrameWindow(),
-					$timeout: g_ui_testing_util.timeout(),
-					variable_name: step.inputs.variable_name,
-					variable_value: step.inputs.variable_value,
-					timeout: step.inputs.timeout || 15,
-				};
-				
+			var $window = g_ui_testing_util.getTestIFrameWindow();
+			if (!$window || !$window.g_form) {
+				onError(messages.NO_G_FORM);
+			} else if (step.inputs.variable_name && step.inputs.variable_value) {
+				var g_form = $window.g_form;
+				var variableName = g_form.resolvePrettyNameMap('IO:' + step.inputs.variable_name);
 				if (variableName) {
-					config.variable_name = variableName;
+					var config = {
+						$window: g_ui_testing_util.getTestIFrameWindow(),
+						$timeout: g_ui_testing_util.timeout(),
+						variable_name: variableName,
+						variable_value: step.inputs.variable_value,
+						timeout: step.inputs.timeout || 15,
+					};
+					
 					processStep(config);
 				} else {
 					onError(messages.INVALID_VARIABLE);
 				}
-			});
+			} else {
+				onSuccess(messages.SKIP_SETTING);
+			}
 		});
     };
 	
     assertionObject.canMutatePage = step.can_mutate_page;
 	
 	function processStep(config) {
-		if (!config.$window || !config.$window.g_form) {
-			onError(messages.NO_G_FORM);
-		} else if (config.variable_name && config.variable_value) {
-			config.$window[config.variable_name + 'g_filter'].reset();
-			config.$window[config.variable_name + 'g_filter'].setQuery('sys_idIN' + config.variable_value);
-			config.$window[config.variable_name + 'acRequest'](null);
+		debugger;
+		config.$window[config.variable_name + 'g_filter'].reset();
+		config.$window[config.variable_name + 'g_filter'].setQuery('sys_idIN' + config.variable_value);
+		config.$window[config.variable_name + 'acRequest'](null);
 
-			var $timeout = g_ui_testing_util.timeout();
+		var $timeout = g_ui_testing_util.timeout();
+		$timeout(function () {
+			// wait until the list has loaded
+			config.$window.g_form.setValue(config.variable_name, config.variable_value);
+
 			$timeout(function () {
-				// wait until the list has loaded
-				config.$window.g_form.setValue(config.variable_name, config.variable_value);
-				
-				$timeout(function () {
-					// wait until the display value for the new value has loaded
-					var values = config.$window.g_form.getValue(config.variable_name);
-					if (values && values.indexOf(config.variable_value) > -1) {
-						onSuccess(messages.SUCCESSFULLY_SET_TO.withValues([config.variable_name, config.variable_value]));
-					} else {
-						onError(messages.FAILED_SET_TO.withValues([config.variable_name, config.variable_value]));
-					}
-				}, 2000);
-			}, 5000);
-		} else {
-			onSuccess(messages.SKIP_SETTING);
-		}
+				// wait until the display value for the new value has loaded
+				var values = config.$window.g_form.getValue(config.variable_name);
+				if (values 
+					&& config.variable_value.split(',')
+					.map(function (v) { return v.trim(); })
+					.every(function (v) { return values.indexOf(v) > -1; })) {
+					onSuccess(messages.SUCCESSFULLY_SET_TO.withValues([config.variable_name, config.variable_value]));
+				} else {
+					onError(messages.FAILED_SET_TO.withValues([config.variable_name, config.variable_value]));
+				}
+			}, 2000);
+		}, 5000);
 	}
 	
 	function message(msg) {
@@ -124,14 +125,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2023-05-23 20:35:56</sys_created_on>
         <sys_id>0e0cdf6897032110d70ef207f053af12</sys_id>
-        <sys_mod_count>29</sys_mod_count>
+        <sys_mod_count>33</sys_mod_count>
         <sys_name>Set List Collector Variable Value (ATF+)</sys_name>
         <sys_package display_value="ATF+" source="x_424426_atf">02dbdb2497032110d70ef207f053af3d</sys_package>
         <sys_policy/>
         <sys_scope display_value="ATF+">02dbdb2497032110d70ef207f053af3d</sys_scope>
         <sys_update_name>sys_atf_step_config_0e0cdf6897032110d70ef207f053af12</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2023-05-25 16:16:57</sys_updated_on>
+        <sys_updated_on>2023-05-30 18:27:10</sys_updated_on>
         <template_reminder>Set List Collector Variable Value</template_reminder>
         <type display_value="Test Step" name="sys_atf_step">0dfc4fcec59021108c8b506e733c4c06</type>
         <wizard_redirect/>
